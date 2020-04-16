@@ -43,6 +43,7 @@ static NSString *const WelcomePageEnabledFeatureFlag = @"welcomepage.enabled";
         _room = nil;
         _subject = nil;
         _token = nil;
+        _phoneNumber = nil;
 
         _colorScheme = nil;
         _featureFlags = [[NSMutableDictionary alloc] init];
@@ -158,6 +159,7 @@ static NSString *const WelcomePageEnabledFeatureFlag = @"welcomepage.enabled";
         _room = builder.room;
         _subject = builder.subject;
         _token = builder.token;
+        _phoneNumber = builder.phoneNumber;
 
         _colorScheme = builder.colorScheme;
 
@@ -223,6 +225,10 @@ static NSString *const WelcomePageEnabledFeatureFlag = @"welcomepage.enabled";
 
     if (_token != nil) {
         urlProps[@"jwt"] = _token;
+    }
+    
+    if (_phoneNumber != nil)  {
+        urlProps[@"invitee"] = _phoneNumber;
     }
 
     if (_userInfo != nil) {

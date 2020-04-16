@@ -28,6 +28,8 @@ import {
     getName
 } from './functions';
 import logger from './logger';
+import { parseURLParams } from '../base/config'
+import { invite } from '../invite'
 
 declare var APP: Object;
 declare var interfaceConfig: Object;
@@ -42,9 +44,12 @@ declare var interfaceConfig: Object;
  * scheme, or a mere room name.
  * @returns {Function}
  */
-export function appNavigate(uri: ?string) {
+export function appNavigate(uri: ?string, callUUID: ?string) {
+    logger.info(`appNavigate() is called with ${uri}`)
     return async (dispatch: Dispatch<any>, getState: Function) => {
         let location = parseURIString(uri);
+
+        logger.info(`[appNavigate] location = ${JSON.stringify(location)}`)
 
         // If the specified location (URI) does not identify a host, use the app's
         // default.
@@ -90,6 +95,9 @@ export function appNavigate(uri: ?string) {
         // XXX In order to support multiple shards, tell the room to the deployment.
         room && (url += `?room=${getBackendSafeRoomName(room)}`);
 
+        // locationURL is to extend config
+        logger.info(`[appNavigate] location.toString() = ${location.toString()}`)
+        logger.info(`[appNavigate] url = ${url}`)
         let config;
 
         // Avoid (re)loading the config when there is no room.
@@ -124,6 +132,57 @@ export function appNavigate(uri: ?string) {
             return;
         }
 
+        // register callUUID in config if it is available
+        if (callUUID) {
+            config.callUUID = callUUID
+        }
+
+        // if invitee query is in locationURL.search, do invite 
+        if (locationURL.search) {
+            const params = parseURLParams(locationURL, true, 'search');
+            if ("invitee" in params) {
+                logger.info(`[appNavigate] a invite query is found in URL ${locationURL.search}`);
+                let phoneNumber = params['invitee']
+                let invitees = [ 
+                    {
+                        type: 'phone',
+                        number: phoneNumber
+                    }
+                ];
+                logger.info(`[appNavigate] now invite with ${invitees[0].number}`);
+                dispatch(invite(invitees))
+                    .then(invitesLeftToSend => {
+                        if (invitesLeftToSend.length) {
+                            const erroredInviteTypeCounts = {};
+            
+                            invitesLeftToSend.forEach(({ type }) => {
+                                if (!erroredInviteTypeCounts[type]) {
+                                    erroredInviteTypeCounts[type] = 0;
+                                }
+                                erroredInviteTypeCounts[type]++;
+                            });   
+            
+                            logger.error(`${invitesLeftToSend.length} invites failed`,
+                                erroredInviteTypeCounts);
+            
+                            /*
+                            sendAnalytics(createInviteDialogEvent(
+                                'error', 'invite', {
+                                    ...erroredInviteTypeCounts
+                                }));
+                            */
+                        }
+                        return invitesLeftToSend;
+                    });
+                // Is this needed?
+                //delete locationURL.search;
+
+                // register invitee's phone number as a callHandle (for recent call list)
+                config.callHandle = phoneNumber
+            } 
+        }
+        
+        logger.info(`[appNavigate] config = ${JSON.stringify(config)}`)
         dispatch(setLocationURL(locationURL));
         dispatch(setConfig(config));
         dispatch(setRoom(room));
@@ -132,7 +191,7 @@ export function appNavigate(uri: ?string) {
         if (room && navigator.product === 'ReactNative') {
             dispatch(createDesiredLocalTracks());
             dispatch(connect());
-        }
+        }        
     };
 }
 

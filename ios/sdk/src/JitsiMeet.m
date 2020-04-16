@@ -159,9 +159,15 @@
         }
 
         if (contacts && (url = contacts.firstObject.personHandle.value)) {
+            NSLog(@"url from recent list: %@", url);
             return [JitsiMeetConferenceOptions fromBuilder:^(JitsiMeetConferenceOptionsBuilder *builder) {
                 builder.audioOnly = audioOnly;
-                builder.room = url;
+                
+                // it is out-going call so room should be user's own number
+                // url will be callee/invitee
+                //builder.room = url;
+                builder.room = @"07045542305";
+                builder.phoneNumber = url;
             }];
         }
     } else if (self.conferenceActivityType && [activityType isEqualToString:self.conferenceActivityType]) {

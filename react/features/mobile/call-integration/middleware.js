@@ -35,6 +35,7 @@ import { _SET_CALL_INTEGRATION_SUBSCRIPTIONS } from './actionTypes';
 import CallKit from './CallKit';
 import ConnectionService from './ConnectionService';
 import { isCallIntegrationEnabled } from './functions';
+import logger from './logger';
 
 const { AudioMode } = NativeModules;
 const CallIntegration = CallKit || ConnectionService;
@@ -114,7 +115,8 @@ function _appWillMount({ dispatch, getState }, next, action) {
 
     const delegate = {
         _onPerformSetMutedCallAction,
-        _onPerformEndCallAction
+        _onPerformEndCallAction,
+        _onPerformAnswerCallAction
     };
 
     const subscriptions
@@ -269,6 +271,12 @@ function _conferenceWillJoin({ dispatch, getState }, next, action) {
     // it upper cased.
     conference.callUUID = (callUUID || uuid.v4()).toUpperCase();
 
+    logger.info(`url: ${url}`);
+    logger.info(`callHandle: ${callHandle}`);
+    logger.info(`handle: ${handle}`);
+    logger.info(`callUUID: ${callUUID}`);
+    logger.info(`conference.callUUID: ${conference.callUUID}`);
+
     CallIntegration.startCall(conference.callUUID, handle, hasVideo)
         .then(() => {
             const displayName = getConferenceName(state);
@@ -344,6 +352,31 @@ function _handleConnectionServiceFailure(state: Object) {
 }
 
 /**
+ * Handles CallKit's event {@code _erformAnswerCallAction}.
+ *
+ * @param {Object} event - The details of the CallKit event
+ * {@code _erformAnswerCallAction}.
+ * @returns {void}
+ */
+function _onPerformAnswerCallAction({ callUUID }) {
+    const { dispatch, getState } = this; // eslint-disable-line no-invalid-this
+    const conference = getCurrentConference(getState);
+
+    logger.info(`[_onPerformAnswerCallAction] is called with ${callUUID}`)
+    if (conference) {
+        logger.info(`[_onPerformAnswerCallAction] conference is ${conference}`)
+    }
+
+    // ToDo:
+    // We are here because a new incoming call is received
+    // need to created conference and join
+    // create room with user's phone number (for receive incoming call)
+    // register this callUUID in config, later with this we can end call.
+    dispatch(appNavigate("07045542305", callUUID))
+}
+    
+
+/**
  * Handles CallKit's event {@code performEndCallAction}.
  *
  * @param {Object} event - The details of the CallKit event
@@ -354,7 +387,13 @@ function _onPerformEndCallAction({ callUUID }) {
     const { dispatch, getState } = this; // eslint-disable-line no-invalid-this
     const conference = getCurrentConference(getState);
 
+    // ToDo: kickout everyone 
+
     if (conference && conference.callUUID === callUUID) {
+        logger.info("[_onPerformEndCallAction] HERE1")
+        // This is not called when the endCallAction is started from a incoming call
+        // because no conference.callUUID is set
+
         // We arrive here when a call is ended by the system, for example, when
         // another incoming call is received and the user selects "End &
         // Accept".

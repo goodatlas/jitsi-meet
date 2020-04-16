@@ -16,6 +16,7 @@
  */
 
 import CallKit
+import PushKit
 import Foundation
 
 /// JitsiMeet CallKit proxy
@@ -31,12 +32,18 @@ import Foundation
         let configuration = CXProviderConfiguration(localizedName: "")
         return CXProvider(configuration: configuration)
     }()
+    
+    private static var registry: PKPushRegistry = {
+        return PKPushRegistry(queue: nil)
+    }()
 
     private static var providerConfiguration: CXProviderConfiguration? {
         didSet {
             guard let configuration = providerConfiguration else { return }
             provider.configuration = configuration
             provider.setDelegate(emitter, queue: nil)
+            registry.delegate = emitter
+            registry.desiredPushTypes = [PKPushType.voIP]
         }
     }
 
@@ -142,7 +149,7 @@ import Foundation
             with UUID: UUID,
             startedConnectingAt dateStartedConnecting: Date?) {
         guard enabled else { return }
-
+        print("reportOutgoingCall[startedConnectingAt:] is called")
         provider.reportOutgoingCall(with: UUID,
                                     startedConnectingAt: dateStartedConnecting)
     }
@@ -151,7 +158,7 @@ import Foundation
             with UUID: UUID,
             connectedAt dateConnected: Date?) {
         guard enabled else { return }
-
+        print("reportOutgoingCall[connectedAt:] is called")
         provider.reportOutgoingCall(with: UUID, connectedAt: dateConnected)
     }
 

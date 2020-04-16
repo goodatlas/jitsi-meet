@@ -16,14 +16,27 @@
 
 import AVKit
 import CallKit
+import PushKit
 import Foundation
 
-internal final class JMCallKitEmitter: NSObject, CXProviderDelegate {
+internal final class JMCallKitEmitter: NSObject, CXProviderDelegate, PKPushRegistryDelegate {
 
     private let listeners = NSMutableArray()
     private var pendingMuteActions = Set<UUID>()
 
     internal override init() {}
+    
+    func configureAudioSession() {
+        let sharedSession = AVAudioSession.sharedInstance()
+        do {
+            try sharedSession.setCategory(AVAudioSession.Category.playAndRecord)
+            try sharedSession.setMode(AVAudioSession.Mode.voiceChat)
+            try sharedSession.setPreferredIOBufferDuration(TimeInterval(0.005))
+            try sharedSession.setPreferredSampleRate(44100.0)
+        } catch {
+            debugPrint("Failed to configure `AVAudioSession`")
+        }
+    }
 
     // MARK: - Add/remove listeners
 
@@ -102,6 +115,7 @@ internal final class JMCallKitEmitter: NSObject, CXProviderDelegate {
 
     func provider(_ provider: CXProvider,
                   didActivate audioSession: AVAudioSession) {
+        print("############### provider(didActivate audioSession:) is called ########### ")
         listeners.forEach {
             let listener = $0 as! JMCallKitListener
             listener.providerDidActivateAudioSession?(session: audioSession)
@@ -115,4 +129,37 @@ internal final class JMCallKitEmitter: NSObject, CXProviderDelegate {
             listener.providerDidDeactivateAudioSession?(session: audioSession)
         }
     }
+
+    // MARK: - PKPushRegistryDelegate
+    
+    func pushRegistry(_ registry: PKPushRegistry, didUpdate pushCredentials: PKPushCredentials, for type: PKPushType) {
+        let pushToken = pushCredentials.token.map { String(format: "%02.2hhx", $0) }.joined()
+        print("pushToken : \(pushToken)")
+    }
+    
+    func pushRegistry(_ registry: PKPushRegistry, didReceiveIncomingPushWith payload: PKPushPayload, for type: PKPushType, completion: @escaping () -> Void) {
+        
+        if type == .voIP {
+            // without this, no sound call will set up
+            self.configureAudioSession()
+            
+            if let handle = payload.dictionaryPayload["handle"] as? String,
+                let uuidString = payload.dictionaryPayload["callUUID"] as? String,
+                let callUUID = UUID(uuidString: uuidString) {
+                
+                listeners.forEach {
+                    let listener = $0 as! JMCallKitListener
+                    listener.performIncomingCall?(UUID: callUUID, handle: handle, isVideo: false)
+                }
+                
+                // Tell PushKit that the notification is handled.
+                completion()
+            }
+            // Asynchronously register with the telephony server and
+            // process the call. Report updates to CallKit as needed.
+            //establishConnection(for: callUUID)
+        }
+    }
 }
+
+

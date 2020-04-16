@@ -19,6 +19,7 @@ export async function loadConfig(url: string): Promise<Object> {
     try {
         const configTxt = await loadScript(url, 2.5 * 1000 /* Timeout in ms */, true /* skipeval */);
         const configJson = await JavaScriptSandbox.evaluate(`${configTxt}\nJSON.stringify(config);`);
+        logger.info(`Config JSON: ${configJson}`);
         const config = JSON.parse(configJson);
 
         if (typeof config !== 'object') {

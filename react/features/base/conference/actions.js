@@ -281,6 +281,7 @@ export function conferenceFailed(conference: Object, error: string) {
  * }}
  */
 export function conferenceJoined(conference: Object) {
+    logger.info("####  CONFERENCE_JOINED action issued")
     return {
         type: CONFERENCE_JOINED,
         conference

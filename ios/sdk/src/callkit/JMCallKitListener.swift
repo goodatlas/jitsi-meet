@@ -29,6 +29,8 @@ import Foundation
     @objc optional func performSetMutedCall(UUID: UUID, isMuted: Bool)
 
     @objc optional func performStartCall(UUID: UUID, isVideo: Bool)
+    
+    @objc optional func performIncomingCall(UUID: UUID, handle: String, isVideo: Bool)
 
     @objc optional func providerDidActivateAudioSession(session: AVAudioSession)
 

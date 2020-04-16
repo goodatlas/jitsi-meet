@@ -523,6 +523,19 @@ export function urlObjectToString(o: Object): ?string {
         }
     }
 
+    // invitee 
+    const { invitee } = o;
+    if (invitee) {
+        let { search } = url;
+        if (search.indexOf('?invitee=') === -1 && search.indexOf('&invitee=') === -1) {
+            search.startsWith('?') || (search = `?${search}`);
+            search.length === 1 || (search += '&');
+            search += `invitee=${invitee}`;
+
+            url.search += search;
+        }
+    }
+
     // fragment/hash
 
     let { hash } = url;

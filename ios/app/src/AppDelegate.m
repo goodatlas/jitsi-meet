@@ -44,7 +44,7 @@
     jitsiMeet.universalLinkDomains = @[@"meet.jit.si", @"alpha.jitsi.net", @"beta.meet.jit.si"];
 
     jitsiMeet.defaultConferenceOptions = [JitsiMeetConferenceOptions fromBuilder:^(JitsiMeetConferenceOptionsBuilder *builder) {
-        builder.serverURL = [NSURL URLWithString:@"https://meet.jit.si"];
+        builder.serverURL = [NSURL URLWithString:@"https://switchcall.alabs.ai"];
         builder.welcomePageEnabled = YES;
 
         // Apple rejected our app because they claim requiring a
@@ -53,7 +53,6 @@
         [builder setFeatureFlag:@"ios.recording.enabled" withBoolean:YES];
 #endif
     }];
-
     [jitsiMeet application:application didFinishLaunchingWithOptions:launchOptions];
 
     return YES;

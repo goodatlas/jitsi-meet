@@ -281,7 +281,7 @@ RCT_EXPORT_METHOD(updateCall:(NSString *)callUUID
 
 // Answering incoming call
 - (void) performAnswerCallWithUUID:(NSUUID *)UUID {
-    DDLogInfo(@"[RNCallKit][CXProviderDelegate][provider:performAnswerCallAction:]");
+    DDLogInfo(@"[RNCallKit][CXProviderDelegate][provider:performAnswerCallAction:] UUID: (%@)", UUID);
 
     [self sendEventWithName:RNCallKitPerformAnswerCallAction
                        body:@{ @"callUUID": UUID.UUIDString }];
@@ -314,6 +314,27 @@ RCT_EXPORT_METHOD(updateCall:(NSString *)callUUID
 
     [JMCallKitProxy reportOutgoingCallWith:UUID
                        startedConnectingAt:nil];
+}
+
+- (void) performIncomingCallWithUUID: (NSUUID *)UUID
+                              handle: (NSString *)handle
+                             isVideo: (BOOL)isVideo {
+    DDLogInfo(@"[RNCallKit][CXProviderDelegate][provider:performIncomingCallAction:]");
+    
+    // Todo: find local displayName with fromPN from address book(?)
+       
+    [JMCallKitProxy reportNewIncomingCallWithUUID:UUID
+                                           handle:handle
+                                      displayName:handle
+                                         hasVideo:isVideo
+                                       completion:^(NSError * _Nullable error) {
+        if (error == nil) {
+            // If the system allows the call to proceed, make a data record for it.
+            //let newCall = VoipCall(callUUID, phoneNumber: phoneNumber)
+            //self.callManager.addCall(newCall)
+            DDLogError(@"[RNCallKit][reportNewIncomingCallWithUUID] Error reportNewIncomingCall: (%@)",  error);
+        }
+    }];
 }
 
 - (void) providerDidActivateAudioSessionWithSession:(AVAudioSession *)session {

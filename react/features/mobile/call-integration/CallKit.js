@@ -43,6 +43,10 @@ if (CallKit) {
 
             return [
                 CallKit.addListener(
+                    'performAnswerCallAction',
+                    delegate._onPerformAnswerCallAction,
+                    context),
+                CallKit.addListener(
                     'performEndCallAction',
                     delegate._onPerformEndCallAction,
                     context),

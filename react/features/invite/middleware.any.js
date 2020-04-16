@@ -185,10 +185,14 @@ function _maybeHideCalleeInfo(action, store) {
  * @returns {void}
  */
 function _onConferenceJoined(store) {
+
+    logger.info('invite/_onConferenceJoined() is called')
     const { dispatch, getState } = store;
 
     const pendingInviteRequests
         = getState()['features/invite'].pendingInviteRequests || [];
+
+    logger.info(`pendingInviteRequests = ${JSON.stringify(pendingInviteRequests)}`)
 
     pendingInviteRequests.forEach(({ invitees, callback }) => {
         dispatch(invite(invitees))
